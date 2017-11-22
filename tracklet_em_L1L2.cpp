@@ -73,6 +73,15 @@ int main(int argc, char ** argv){
 	ofstream disdat;
 	plotname = "distance_" + nz + "z.dat";
 	disdat.open(plotname.c_str());
+	string rootname=outname+".root";
+	TFile*fout=new TFile(rootname.c_str(),"RECREATE");
+	TH1F*dRMatch=new TH1F("dRMatch", "#Delta R (Cluster, Gen Jet)", 100, 0.0, 1.0);
+	TH2F*DistToClus=new TH2F("DistToClus", "#Delta #eta/#phi (Cluster, Gen Jet)", 100, -0.5, 0.5, 100, -0.5,0.5);
+	TH1F*PtRatio=new TH1F("PtRatio", "Energy Ratio Track Jets / Gen Jets ", 100, 0.8,1.2);
+	
+	TH1F*GenJetEffNum=new TH1F("GenJetEffNum", "Gen Jet Match Efficiency", 60, 0, 300);
+	TH1F*GenJetEffDen=new TH1F("GenJetEffDen", "Gen Jet Match Efficiency", 60, 0, 300);
+
 	int nevents = 0;
 	getline(in_tracks, data_in, ' ');
         string data;
@@ -166,12 +175,21 @@ int main(int argc, char ** argv){
              out_clusts << "ZBIN: " << mzb->znum << endl; 
              for(int k = 0; k < mzb->nclust; ++k){
 		bool matched = false;
+		float mindistance=999.;
+		float mineta=999.;
+		float minphi=999.;
          	for(int b = 0; b < ntp; b++){
                //Match clusters with correct input jet (and ignore the garbage clusters.)
                // Only accept cluster if it is within .3 (in eta-phi space) of one of the jets.
-                
+               	    
 		   distance = sqrt(pow(mzb->mcd[b].ogphi - mzb->clusters[k].phi, 2) + pow(mzb->mcd[b].ogeta - mzb->clusters[k].eta, 2));
-		   if (distance < 0.3){
+		if(mindistance>distance){
+		mindistance=distance;
+		mineta=mzb->mcd[b].ogeta - mzb->clusters[k].eta;
+		minphi=mzb->mcd[b].ogphi - mzb->clusters[k].phi;
+		}
+	   	if (distance < 0.3){
+	
 	     		plot1dat << mzb->mcd[b].ogphi << "\t" << mzb->clusters[k].phi << endl;
 			plot2dat << mzb->mcd[b].ogeta << "\t" << mzb->clusters[k].eta << endl;
 			ptdat << mzb->mcd[b].ogpt << "\t" << mzb->clusters[k].pTtot << endl;
@@ -182,9 +200,13 @@ int main(int argc, char ** argv){
 			out_clusts << "   eta \t\t\t" << mzb->mcd[b].ogeta << "\t\t" << mzb->clusters[k].eta << endl;
 			out_clusts << "   pT \t\t\t" << mzb->mcd[b].ogpt << "\t\t" << mzb->clusters[k].pTtot << endl;
 			matched = true;
+			PtRatio->Fill(mzb->clusters[k].pTtot/ mzb->mcd[b].ogpt);
 			break;
 	     	   } 
                 }//for each input jet
+		dRMatch->Fill(mindistance);	
+		DistToClus->Fill(mineta,minphi);
+		
 	        if(matched)
 			continue;
 		out_clusts << "  (Unmatched) CLUSTER " << k << "(" << mzb->clusters[k].numtracks << " tracks)" << endl;
@@ -192,7 +214,16 @@ int main(int argc, char ** argv){
 		out_clusts << "   eta \t\t\t" << mzb->clusters[k].eta << endl;
 		out_clusts << "   pT \t\t\t"  << mzb->clusters[k].pTtot << endl;
 	    } //for each cluster
-		
+	     for(int b = 0; b < ntp; b++){//for each gen jet
+		GenJetEffDen->Fill(mzb->mcd[b].ogpt);	
+		for(int k = 0; k < mzb->nclust; ++k){
+			distance = sqrt(pow(mzb->mcd[b].ogphi - mzb->clusters[k].phi, 2) + pow(mzb->mcd[b].ogeta - mzb->clusters[k].eta, 2));	
+			if(distance<0.3){
+				GenJetEffNum->Fill(mzb->mcd[b].ogpt);	
+				break;
+		    }
+	     }
+	  }	
 	    free(mzb->mcd);
 	    free(mzb->clusters);
 	    free(mzb);
@@ -208,5 +239,11 @@ int main(int argc, char ** argv){
 	traxdat.close();
 	disdat.close();
 	cout << "5 new data files created." <<endl;
+	dRMatch->Write("dRtoClus");
+	DistToClus->Write("DistToClus");
+	PtRatio->Write("PtRatio");
+	TEfficiency eff(*GenJetEffNum,*GenJetEffDen);
+	eff.Write("MatchingEfficiencyPt");
+	fout->Close();
 	return 0;
 } //end main

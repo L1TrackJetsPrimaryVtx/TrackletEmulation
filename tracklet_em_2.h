@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <string>
 #include <cstdlib>
+#include <TFile.h>
+#include <TH1F.h>
+#include <TH2F.h>
+#include <TEfficiency.h>
 using namespace std;
 
 //Holds data for MC jet.
