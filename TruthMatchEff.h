@@ -75,12 +75,6 @@ public :
     vector<float>   *recojet_phi;
     vector<int>     *recojet_ntracks;
     
-    vector<float>   *recoClusjet_eta;
-    vector<float>   *recoClusjet_vz;
-    vector<float>   *recoClusjet_p;
-    vector<float>   *recoClusjet_pt;
-    vector<float>   *recoClusjet_phi;
-    vector<int>     *recoClusjet_ntracks;
     
    vector<float>   *jet_eta;
    vector<float>   *jet_vz;
@@ -163,12 +157,6 @@ public :
     TBranch        *b_recojet_pt;   //!
     TBranch        *b_recojet_phi;   //!
     TBranch        *b_recojet_ntracks;   //!
-    TBranch        *b_recoClusjet_eta;   //!
-    TBranch        *b_recoClusjet_vz;   //!
-    TBranch        *b_recoClusjet_p;   //!
-    TBranch        *b_recoClusjet_pt;   //!
-    TBranch        *b_recoClusjet_phi;   //!
-    TBranch        *b_recoClusjet_ntracks;   //!
     TBranch        *b_genjetak4_metfrac;   //!
     TBranch        *b_genjetak4_chgfrac;   //!
 
@@ -185,6 +173,7 @@ public :
    virtual ~TruthMatchEff();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
+   virtual Int_t    GetNevents(){return fChain->GetEntries();};
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
    virtual void     Loop();
@@ -200,11 +189,11 @@ TruthMatchEff::TruthMatchEff(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("QCD_D13_PU200_0.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("TTBar_D13_PU200HighStats.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("QCD_D13_PU200_0.root","READ");
+         f = new TFile("TTBar_D13_PU200HighStats.root","READ");
       }
-      TDirectory * dir = (TDirectory*)f->Get("QCD_D13_PU200_0.root:/L1TrackNtuple");
+      TDirectory * dir = (TDirectory*)f->Get("TTBar_D13_PU200HighStats.root:/L1TrackNtuple");
       dir->GetObject("eventTree",tree);
 
    }
@@ -305,12 +294,6 @@ MC_lep = 0;
     recojet_phi = 0;
     recojet_ntracks = 0;
     
-    recoClusjet_eta = 0;
-    recoClusjet_vz = 0;
-    recoClusjet_p = 0;
-    recoClusjet_pt = 0;
-    recoClusjet_phi = 0;
-    recoClusjet_ntracks = 0;
    jet_tp_sumpt = 0;
    jet_truetp_sumpt = 0;
     genjetak4_metfrac = 0;
@@ -383,12 +366,6 @@ MC_lep = 0;
     fChain->SetBranchAddress("recojet_phi", &recojet_phi, &b_recojet_phi);
     fChain->SetBranchAddress("recojet_ntracks", &recojet_ntracks, &b_recojet_ntracks);
     
-    fChain->SetBranchAddress("recoClusjet_eta", &recoClusjet_eta, &b_recoClusjet_eta);
-    fChain->SetBranchAddress("recoClusjet_vz", &recoClusjet_vz, &b_recoClusjet_vz);
-    fChain->SetBranchAddress("recoClusjet_p", &recoClusjet_p, &b_recoClusjet_p);
-    fChain->SetBranchAddress("recoClusjet_pt", &recoClusjet_pt, &b_recoClusjet_pt);
-    fChain->SetBranchAddress("recoClusjet_phi", &recoClusjet_phi, &b_recoClusjet_phi);
-    fChain->SetBranchAddress("recoClusjet_ntracks", &recoClusjet_ntracks, &b_recoClusjet_ntracks);
    fChain->SetBranchAddress("jet_eta", &jet_eta, &b_jet_eta);
    fChain->SetBranchAddress("jet_vz", &jet_vz, &b_jet_vz);
    fChain->SetBranchAddress("jet_p", &jet_p, &b_jet_p);

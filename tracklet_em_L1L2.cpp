@@ -81,155 +81,105 @@ int main(int argc, char ** argv){
 	TH1F*PtRatio=new TH1F("PtRatio", "Energy Ratio Track Jets / Gen Jets ", 100, 0.8,1.2);
 	TH1F*GenJetEffNum=new TH1F("GenJetEffNum", "Gen Jet Match Efficiency", 60, 0, 300);
 	TH1F*GenJetEffDen=new TH1F("GenJetEffDen", "Gen Jet Match Efficiency", 60, 0, 300);
+	TH1F*GenJetEtaEffNum=new TH1F("GenJetEtaEffNum", "Gen Jet Match Efficiency", 50, -2.5, 2.5);
+	TH1F*GenJetEtaEffDen=new TH1F("GenJetEtaEffDen", "Gen Jet Match Efficiency", 50, -2.5, 2.5);
 	TruthMatchEff*EventClass=new TruthMatchEff();
 	EventClass->Loop();	
 	int nevents = 0;
 	getline(in_tracks, data_in, ' ');
         string data;
 	float distance;
-     	while(nevents < eventend){
- //pointer to structure to hold jet MC data for each event.
-        	struct mc_data * mcdat = (struct mc_data *)malloc(10*sizeof(struct mc_data));
-		int ntracks = 0;
-		int ntp = 0;
-		string evnum = "0";
-		while(data_in == "Event"){
-			for(int cc=0; cc<2; ++cc){
-				getline(in_tracks, data_in, ' ');
+	for (Long64_t jentry=0; jentry<EventClass->GetNevents();jentry++) {
+		EventClass->GetEntry(jentry);
+		if(EventClass->MC_lep->at(0)>0)continue;
+		struct mc_data * mcdat = (struct mc_data *)malloc(10*sizeof(struct mc_data));
+			int ntp=0;
+		       for (int g=0; g<EventClass->genjetak4_phi->size(); ++g){
+				if(fabs(EventClass->genjetak4_eta->at(g))>2.2)continue;
+		                if(fabs(EventClass->genjetak4_pt->at(g))<30)continue;
+				mcdat[ntp].ogpt =EventClass->genjetak4_pt->at(g);
+				mcdat[ntp].ogeta =EventClass->genjetak4_eta->at(g);
+				mcdat[ntp].ogphi =EventClass->genjetak4_phi->at(g);
+				++ntp;
+			}		
+	   			out_clusts << "\n****EVENT " << nevents << " *** (" << ntp << " tracking particles)" << endl;
+				for(int i = 0; i < ntp; ++i){
+	   				out_clusts << i << " pT: " << mcdat[i].ogpt << " eta: " << mcdat[i].ogeta << " phi: " << mcdat[i].ogphi << endl;
+				}
+			int ntracks=0;
+			for(unsigned int t=0; t<EventClass->tp_pt->size(); ++t){
+				tracks[ntracks].pT =EventClass->tp_pt->at(t);
+				tracks[ntracks].eta =EventClass->tp_eta->at(t);
+				tracks[ntracks].phi =EventClass->tp_phi->at(t);
+				tracks[ntracks].z =EventClass->tp_z0->at(t);	
+				tracks[ntracks].bincount = 0;
+				if(tracks[ntracks].pT >= 2.0 && fabs(tracks[ntracks].eta) < 2.4 && fabs(tracks[ntracks].z) < 15.0){
+				++ntracks;		
+				}
 			}
-			if(data_in != evnum){
-				++nevents;
-				ntp = 0;
-			}
-			evnum = data_in;
-			for(int cc=0; cc<2; ++cc){
-				getline(in_tracks, data_in, ' ');
-			}
-			getline(in_tracks, data, ' ');
-                        mcdat[ntp].ogpt = atof(data.c_str());
-			for(int cc=0; cc<3; ++cc){
-				getline(in_tracks, data, ' ');
-			}
-                        mcdat[ntp].ogeta = atof(data.c_str());
-			getline(in_tracks, data);
-                        data = data.substr(0, data.length()-1);
-                        mcdat[ntp].ogphi = atof(data.c_str());
-			ntp++;
-		      //Now get next particle (or first track data)
-			getline(in_tracks, data_in, ' ');
-		}
-		if(nevents < eventstart){
-			ntracks = 0;
-			while(data_in != "Event"){
-				getline(in_tracks, data_in, ' ');
-			}
-			continue;
-		}
-	   	out_clusts << "\n****EVENT " << nevents << " *** (" << ntp << " tracking particles)" << endl;
-		for(int i = 0; i < ntp; ++i){
-	   		out_clusts << i << " pT: " << mcdat[i].ogpt << " eta: " << mcdat[i].ogeta << " phi: " << mcdat[i].ogphi << endl;
-		}
-		//getline(in_tracks, data_in, ' ');
-		if(in_tracks.eof()){
-			cout << "End of file reached!" << endl;
-			break;
-		}
-		while(data_in != "Event") {
-		//Convert strings to floating point numbers!!
-			tracks[ntracks].pT = atof(data_in.c_str());
-			//read spaces
-			for(int cc=0; cc<3; ++cc){
-				getline(in_tracks, data_in, ' ');
-			}
-			tracks[ntracks].eta = atof(data_in.c_str());
-			for(int cc=0; cc<3; ++cc){
-				getline(in_tracks, data_in, ' ');
-			}
-			tracks[ntracks].phi = atof(data_in.c_str());
-			//read spaces
-			for(int cc=0; cc<2; ++cc){
-				getline(in_tracks, data_in, ' ');
-			}
-			getline(in_tracks, data_in);
-			tracks[ntracks].z = atof(data_in.c_str());
-			tracks[ntracks].bincount = 0;
-			if(tracks[ntracks].pT >= 2.0 && fabs(tracks[ntracks].eta) < 2.4 && fabs(tracks[ntracks].z) < 15.0){
-				ntracks++;
-			}    
-		//Read next line of data
-			if(in_tracks.eof()){
-				cout << "End of file reached!" << endl;
-				break;
-			}
-			getline(in_tracks, data_in, ' ');
-
-             } //data_in isn't "Event"
-
-          //find clusters for tracks data.
-             out_clusts << ntracks << " tracks total" << endl;
-             mcdat->ntracks = ntracks;
-             struct maxzbin * mzb = L2_cluster(tracks, mcdat, nzbins);
-             if(mzb == NULL){
-                continue;
-             }
-         //output to plot data files.
-             out_clusts << "ZBIN: " << mzb->znum << endl; 
-             for(int k = 0; k < mzb->nclust; ++k){
-		bool matched = false;
-		float mindistance=999.;
-		float mineta=999.;
-		float minphi=999.;
-         	for(int b = 0; b < ntp; b++){
-               //Match clusters with correct input jet (and ignore the garbage clusters.)
-               // Only accept cluster if it is within .3 (in eta-phi space) of one of the jets.
+	         mcdat->ntracks = ntracks;
+             	 struct maxzbin * mzb = L2_cluster(tracks, mcdat, nzbins);	
+             	 if(mzb == NULL){
+                	continue;
+             	}
+                out_clusts << "ZBIN: " << mzb->znum << endl; 
+                for(int k = 0; k < mzb->nclust; ++k){
+			bool matched = false;
+			float mindistance=999.;
+			float mineta=999.;
+			float minphi=999.;
+         		for(int b = 0; b < ntp; b++){
+               		//Match clusters with correct input jet (and ignore the garbage clusters.)
+               		// Only accept cluster if it is within .3 (in eta-phi space) of one of the jets.
                	    
-		   distance = sqrt(pow(mzb->mcd[b].ogphi - mzb->clusters[k].phi, 2) + pow(mzb->mcd[b].ogeta - mzb->clusters[k].eta, 2));
-		if(mindistance>distance){
-		mindistance=distance;
-		mineta=mzb->mcd[b].ogeta - mzb->clusters[k].eta;
-		minphi=mzb->mcd[b].ogphi - mzb->clusters[k].phi;
-		}
-	   	if (distance < 0.3){
-	
-	     		plot1dat << mzb->mcd[b].ogphi << "\t" << mzb->clusters[k].phi << endl;
-			plot2dat << mzb->mcd[b].ogeta << "\t" << mzb->clusters[k].eta << endl;
-			ptdat << mzb->mcd[b].ogpt << "\t" << mzb->clusters[k].pTtot << endl;
-			traxdat << ntracks << "\t" <<  mzb->clusters[k].numtracks << endl;
-			disdat << mzb->mcd[b].ogpt << "\t" << distance << endl;
-			out_clusts << "   CLUSTER " << k << "(" << mzb->clusters[k].numtracks << " tracks)\t MC data \t Matched cluster data" << endl;
-			out_clusts << "   phi \t\t\t" << mzb->mcd[b].ogphi << "\t\t" << mzb->clusters[k].phi << endl;
-			out_clusts << "   eta \t\t\t" << mzb->mcd[b].ogeta << "\t\t" << mzb->clusters[k].eta << endl;
-			out_clusts << "   pT \t\t\t" << mzb->mcd[b].ogpt << "\t\t" << mzb->clusters[k].pTtot << endl;
-			matched = true;
-			PtRatio->Fill(mzb->clusters[k].pTtot/ mzb->mcd[b].ogpt);
-			break;
-	     	   } 
-                }//for each input jet
-		dRMatch->Fill(mindistance);	
-		DistToClus->Fill(mineta,minphi);
+		   		distance = sqrt(pow(mzb->mcd[b].ogphi - mzb->clusters[k].phi, 2) + pow(mzb->mcd[b].ogeta - mzb->clusters[k].eta, 2));
+				if(mindistance>distance){
+				mindistance=distance;
+				mineta=mzb->mcd[b].ogeta - mzb->clusters[k].eta;
+				minphi=mzb->mcd[b].ogphi - mzb->clusters[k].phi;
+				}
+	   			if (distance < 0.3){
+	     				plot1dat << mzb->mcd[b].ogphi << "\t" << mzb->clusters[k].phi << endl;
+					plot2dat << mzb->mcd[b].ogeta << "\t" << mzb->clusters[k].eta << endl;
+					ptdat << mzb->mcd[b].ogpt << "\t" << mzb->clusters[k].pTtot << endl;
+					traxdat << ntracks << "\t" <<  mzb->clusters[k].numtracks << endl;
+					disdat << mzb->mcd[b].ogpt << "\t" << distance << endl;
+					out_clusts << "   CLUSTER " << k << "(" << mzb->clusters[k].numtracks << " tracks)\t MC data \t Matched cluster data" << endl;
+					out_clusts << "   phi \t\t\t" << mzb->mcd[b].ogphi << "\t\t" << mzb->clusters[k].phi << endl;
+					out_clusts << "   eta \t\t\t" << mzb->mcd[b].ogeta << "\t\t" << mzb->clusters[k].eta << endl;
+					out_clusts << "   pT \t\t\t" << mzb->mcd[b].ogpt << "\t\t" << mzb->clusters[k].pTtot << endl;
+					matched = true;
+					PtRatio->Fill(mzb->clusters[k].pTtot/ mzb->mcd[b].ogpt);
+					break;
+	     	   		} 
+                	}//for each input jet
+			dRMatch->Fill(mindistance);	
+			DistToClus->Fill(mineta,minphi);
 		
-	        if(matched)
-			continue;
-		out_clusts << "  (Unmatched) CLUSTER " << k << "(" << mzb->clusters[k].numtracks << " tracks)" << endl;
-		out_clusts << "   phi \t\t\t" << "\t\t" << mzb->clusters[k].phi << endl;
-		out_clusts << "   eta \t\t\t" << mzb->clusters[k].eta << endl;
-		out_clusts << "   pT \t\t\t"  << mzb->clusters[k].pTtot << endl;
-	    } //for each cluster
-	     for(int b = 0; b < ntp; b++){//for each gen jet
-		GenJetEffDen->Fill(mzb->mcd[b].ogpt);	
-		for(int k = 0; k < mzb->nclust; ++k){
-			distance = sqrt(pow(mzb->mcd[b].ogphi - mzb->clusters[k].phi, 2) + pow(mzb->mcd[b].ogeta - mzb->clusters[k].eta, 2));	
-			if(distance<0.3){
-				GenJetEffNum->Fill(mzb->mcd[b].ogpt);	
-				break;
-		    }
-	     }
-	  }	
-	    free(mzb->mcd);
-	    free(mzb->clusters);
-	    free(mzb);
-	     
-	} //while nevents < eventend
+	        	if(matched)continue;
+			out_clusts << "  (Unmatched) CLUSTER " << k << "(" << mzb->clusters[k].numtracks << " tracks)" << endl;
+			out_clusts << "   phi \t\t\t" << "\t\t" << mzb->clusters[k].phi << endl;
+			out_clusts << "   eta \t\t\t" << mzb->clusters[k].eta << endl;
+			out_clusts << "   pT \t\t\t"  << mzb->clusters[k].pTtot << endl;
+	        } //for each cluster
+	        for(int b = 0; b < ntp; b++){//for each gen jet
+			GenJetEffDen->Fill(mzb->mcd[b].ogpt);	
+			GenJetEtaEffDen->Fill(mzb->mcd[b].ogeta);
+			for(int k = 0; k < mzb->nclust; ++k){
+				distance = sqrt(pow(mzb->mcd[b].ogphi - mzb->clusters[k].phi, 2) + pow(mzb->mcd[b].ogeta - mzb->clusters[k].eta, 2));	
+				if(distance<0.3){
+					GenJetEffNum->Fill(mzb->mcd[b].ogpt);	
+					GenJetEtaEffNum->Fill(mzb->mcd[b].ogeta);
+					break;
+		    		}	
+	     		}
+	  	}	
+	    	free(mzb->mcd);
+	    	free(mzb->clusters);
+	    	free(mzb);
+
+	}
+
         out_clusts << "****" << nevents << " events****" << endl;
 	free(tracks);
         in_tracks.close();
