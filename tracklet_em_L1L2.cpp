@@ -1,4 +1,5 @@
 #include "tracklet_em_2.h"
+#include "TruthMatchEff.h"
 
 //  for 1trk, file called "trk_output_v2.txt" should contain all event data in format:
 //"Event" [2 spaces] # [3 spaces] jet pT [3 spaces] jet eta [3 spaces] jet phi  (for both jets)
@@ -78,10 +79,10 @@ int main(int argc, char ** argv){
 	TH1F*dRMatch=new TH1F("dRMatch", "#Delta R (Cluster, Gen Jet)", 100, 0.0, 1.0);
 	TH2F*DistToClus=new TH2F("DistToClus", "#Delta #eta/#phi (Cluster, Gen Jet)", 100, -0.5, 0.5, 100, -0.5,0.5);
 	TH1F*PtRatio=new TH1F("PtRatio", "Energy Ratio Track Jets / Gen Jets ", 100, 0.8,1.2);
-	
 	TH1F*GenJetEffNum=new TH1F("GenJetEffNum", "Gen Jet Match Efficiency", 60, 0, 300);
 	TH1F*GenJetEffDen=new TH1F("GenJetEffDen", "Gen Jet Match Efficiency", 60, 0, 300);
-
+	TruthMatchEff*EventClass=new TruthMatchEff();
+	EventClass->Loop();	
 	int nevents = 0;
 	getline(in_tracks, data_in, ' ');
         string data;
@@ -239,6 +240,7 @@ int main(int argc, char ** argv){
 	traxdat.close();
 	disdat.close();
 	cout << "5 new data files created." <<endl;
+	fout->cd();
 	dRMatch->Write("dRtoClus");
 	DistToClus->Write("DistToClus");
 	PtRatio->Write("PtRatio");

@@ -200,11 +200,11 @@ TruthMatchEff::TruthMatchEff(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("TTBar_D13_PU2003GeV.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("QCD_D13_PU200_0.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("TTBar_D13_PU2003GeV.root");
+         f = new TFile("QCD_D13_PU200_0.root","READ");
       }
-      TDirectory * dir = (TDirectory*)f->Get("TTBar_D13_PU2003GeV.root:/L1TrackNtuple");
+      TDirectory * dir = (TDirectory*)f->Get("QCD_D13_PU200_0.root:/L1TrackNtuple");
       dir->GetObject("eventTree",tree);
 
    }
