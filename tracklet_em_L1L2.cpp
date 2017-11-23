@@ -45,7 +45,7 @@ int main(int argc, char ** argv){
             exit(0);
         }
 
-	struct track_data * tracks = (struct track_data *)malloc(numtracks * sizeof(struct track_data));
+	struct track_data * tracks = (struct track_data *)malloc(2*numtracks * sizeof(struct track_data));
 	string data_in;
   //Open input file and all output files.
 	ifstream in_tracks;
@@ -75,54 +75,60 @@ int main(int argc, char ** argv){
 	plotname = "distance_" + nz + "z.dat";
 	disdat.open(plotname.c_str());
 	string rootname=outname+".root";
-	TFile*fout=new TFile(rootname.c_str(),"RECREATE");
-	TH1F*dRMatch=new TH1F("dRMatch", "#Delta R (Cluster, Gen Jet)", 100, 0.0, 1.0);
-	TH2F*DistToClus=new TH2F("DistToClus", "#Delta #eta/#phi (Cluster, Gen Jet)", 100, -0.5, 0.5, 100, -0.5,0.5);
-	TH1F*PtRatio=new TH1F("PtRatio", "Energy Ratio Track Jets / Gen Jets ", 100, 0.8,1.2);
-	TH1F*GenJetEffNum=new TH1F("GenJetEffNum", "Gen Jet Match Efficiency", 60, 0, 300);
-	TH1F*GenJetEffDen=new TH1F("GenJetEffDen", "Gen Jet Match Efficiency", 60, 0, 300);
-	TH1F*GenJetEtaEffNum=new TH1F("GenJetEtaEffNum", "Gen Jet Match Efficiency", 50, -2.5, 2.5);
-	TH1F*GenJetEtaEffDen=new TH1F("GenJetEtaEffDen", "Gen Jet Match Efficiency", 50, -2.5, 2.5);
-	TruthMatchEff*EventClass=new TruthMatchEff();
-	EventClass->Loop();	
+	TFile fout(rootname.c_str(),"RECREATE");
+	TH1F dRMatch("dRMatch", "#Delta R (Cluster, Gen Jet)", 100, 0.0, 1.0);
+	TH2F DistToClus("DistToClus", "#Delta #eta/#phi (Cluster, Gen Jet)", 100, -0.5, 0.5, 100, -0.5,0.5);
+	TH1F PtRatio("PtRatio", "Energy Ratio Track Jets / Gen Jets ", 100, 0.8,1.2);
+	TH1F GenJetEffNum("GenJetEffNum", "Gen Jet Match Efficiency", 60, 0, 300);
+	TH1F GenJetEffDen("GenJetEffDen", "Gen Jet Match Efficiency", 60, 0, 300);
+	TH1F GenJetEtaEffNum("GenJetEtaEffNum", "Gen Jet Match Efficiency", 50, -2.5, 2.5);
+	TH1F GenJetEtaEffDen("GenJetEtaEffDen", "Gen Jet Match Efficiency", 50, -2.5, 2.5);
+	TruthMatchEff EventClass;
+	EventClass.Loop();	
 	int nevents = 0;
 	getline(in_tracks, data_in, ' ');
         string data;
 	float distance;
-	for (Long64_t jentry=0; jentry<EventClass->GetNevents();jentry++) {
-		EventClass->GetEntry(jentry);
-		if(EventClass->MC_lep->at(0)>0)continue;
+	//for (Long64_t jentry=0; jentry<EventClass.GetNevents();jentry++) {
+	for (Long64_t jentry=0; jentry<2000;jentry++) {
+		EventClass.GetEntry(jentry);
 		struct mc_data * mcdat = (struct mc_data *)malloc(10*sizeof(struct mc_data));
+		if(EventClass.MC_lep->at(0)>0)continue;
 			int ntp=0;
-		       for (int g=0; g<EventClass->genjetak4_phi->size(); ++g){
-				if(fabs(EventClass->genjetak4_eta->at(g))>2.2)continue;
-		                if(fabs(EventClass->genjetak4_pt->at(g))<30)continue;
-				mcdat[ntp].ogpt =EventClass->genjetak4_pt->at(g);
-				mcdat[ntp].ogeta =EventClass->genjetak4_eta->at(g);
-				mcdat[ntp].ogphi =EventClass->genjetak4_phi->at(g);
-				++ntp;
-			}		
-	   			out_clusts << "\n****EVENT " << nevents << " *** (" << ntp << " tracking particles)" << endl;
+		       for (int g=0; g<EventClass.genjetak4_phi->size(); ++g){
+				mcdat[ntp].ogpt =EventClass.genjetak4_pt->at(g);
+				mcdat[ntp].ogeta =EventClass.genjetak4_eta->at(g);
+				mcdat[ntp].ogphi =EventClass.genjetak4_phi->at(g);
+				if(mcdat[ntp].ogpt>30 && fabs(mcdat[ntp].ogeta)<2.2)++ntp;
+			}	
+				/*	
+	   			out_clusts << "\n****EVENT " << jentry << " *** (" << ntp << " tracking particles)" << endl;
 				for(int i = 0; i < ntp; ++i){
 	   				out_clusts << i << " pT: " << mcdat[i].ogpt << " eta: " << mcdat[i].ogeta << " phi: " << mcdat[i].ogphi << endl;
 				}
+				*/
+		 	if(mcdat==NULL)continue;
 			int ntracks=0;
-			for(unsigned int t=0; t<EventClass->tp_pt->size(); ++t){
-				tracks[ntracks].pT =EventClass->tp_pt->at(t);
-				tracks[ntracks].eta =EventClass->tp_eta->at(t);
-				tracks[ntracks].phi =EventClass->tp_phi->at(t);
-				tracks[ntracks].z =EventClass->tp_z0->at(t);	
+			for(unsigned int t=0; t<EventClass.tp_pt->size(); ++t){
+				if(EventClass.tp_z0->at(t)!=EventClass.tp_z0->at(t))continue;
+				tracks[ntracks].pT =EventClass.tp_pt->at(t);
+				tracks[ntracks].eta =EventClass.tp_eta->at(t);
+				tracks[ntracks].phi =EventClass.tp_phi->at(t);
+				tracks[ntracks].z =EventClass.tp_z0->at(t);	
 				tracks[ntracks].bincount = 0;
-				if(tracks[ntracks].pT >= 2.0 && fabs(tracks[ntracks].eta) < 2.4 && fabs(tracks[ntracks].z) < 15.0){
+				if(tracks[ntracks].pT >= 2.0 && fabs(tracks[ntracks].eta) < 2.4 && fabs(tracks[ntracks].z) < 15.0 && EventClass.tp_nstublayers->at(t)>=4){
 				++ntracks;		
 				}
 			}
+			//std::cout<<"ntracks "<<jentry<<std::endl;
 	         mcdat->ntracks = ntracks;
+		if(ntracks==0)continue;
              	 struct maxzbin * mzb = L2_cluster(tracks, mcdat, nzbins);	
              	 if(mzb == NULL){
+			//std::cout<<"No Clusters "<<std::endl;
                 	continue;
              	}
-                out_clusts << "ZBIN: " << mzb->znum << endl; 
+                //out_clusts << "ZBIN: " << mzb->znum << endl;
                 for(int k = 0; k < mzb->nclust; ++k){
 			bool matched = false;
 			float mindistance=999.;
@@ -139,6 +145,7 @@ int main(int argc, char ** argv){
 				minphi=mzb->mcd[b].ogphi - mzb->clusters[k].phi;
 				}
 	   			if (distance < 0.3){
+					/*
 	     				plot1dat << mzb->mcd[b].ogphi << "\t" << mzb->clusters[k].phi << endl;
 					plot2dat << mzb->mcd[b].ogeta << "\t" << mzb->clusters[k].eta << endl;
 					ptdat << mzb->mcd[b].ogpt << "\t" << mzb->clusters[k].pTtot << endl;
@@ -148,40 +155,43 @@ int main(int argc, char ** argv){
 					out_clusts << "   phi \t\t\t" << mzb->mcd[b].ogphi << "\t\t" << mzb->clusters[k].phi << endl;
 					out_clusts << "   eta \t\t\t" << mzb->mcd[b].ogeta << "\t\t" << mzb->clusters[k].eta << endl;
 					out_clusts << "   pT \t\t\t" << mzb->mcd[b].ogpt << "\t\t" << mzb->clusters[k].pTtot << endl;
+					*/
 					matched = true;
-					PtRatio->Fill(mzb->clusters[k].pTtot/ mzb->mcd[b].ogpt);
+					PtRatio.Fill(mzb->clusters[k].pTtot/ mzb->mcd[b].ogpt);
 					break;
 	     	   		} 
                 	}//for each input jet
-			dRMatch->Fill(mindistance);	
-			DistToClus->Fill(mineta,minphi);
+			dRMatch.Fill(mindistance);	
+			DistToClus.Fill(mineta,minphi);
 		
 	        	if(matched)continue;
+			/*
 			out_clusts << "  (Unmatched) CLUSTER " << k << "(" << mzb->clusters[k].numtracks << " tracks)" << endl;
 			out_clusts << "   phi \t\t\t" << "\t\t" << mzb->clusters[k].phi << endl;
 			out_clusts << "   eta \t\t\t" << mzb->clusters[k].eta << endl;
 			out_clusts << "   pT \t\t\t"  << mzb->clusters[k].pTtot << endl;
+			*/
 	        } //for each cluster
 	        for(int b = 0; b < ntp; b++){//for each gen jet
-			GenJetEffDen->Fill(mzb->mcd[b].ogpt);	
-			GenJetEtaEffDen->Fill(mzb->mcd[b].ogeta);
+			GenJetEffDen.Fill(mzb->mcd[b].ogpt);	
+			GenJetEtaEffDen.Fill(mzb->mcd[b].ogeta);
 			for(int k = 0; k < mzb->nclust; ++k){
 				distance = sqrt(pow(mzb->mcd[b].ogphi - mzb->clusters[k].phi, 2) + pow(mzb->mcd[b].ogeta - mzb->clusters[k].eta, 2));	
 				if(distance<0.3){
-					GenJetEffNum->Fill(mzb->mcd[b].ogpt);	
-					GenJetEtaEffNum->Fill(mzb->mcd[b].ogeta);
+					GenJetEffNum.Fill(mzb->mcd[b].ogpt);	
+					GenJetEtaEffNum.Fill(mzb->mcd[b].ogeta);
 					break;
 		    		}	
 	     		}
-	  	}	
+	  	}
 	    	free(mzb->mcd);
 	    	free(mzb->clusters);
 	    	free(mzb);
-
+ 		//free(tracks);
 	}
 
-        out_clusts << "****" << nevents << " events****" << endl;
-	free(tracks);
+        //out_clusts << "****" << nevents << " events****" << endl;
+	if(tracks!=NULL)free(tracks);
         in_tracks.close();
 	out_clusts.close();
 	plot1dat.close();
@@ -190,12 +200,21 @@ int main(int argc, char ** argv){
 	traxdat.close();
 	disdat.close();
 	cout << "5 new data files created." <<endl;
-	fout->cd();
-	dRMatch->Write("dRtoClus");
-	DistToClus->Write("DistToClus");
-	PtRatio->Write("PtRatio");
-	TEfficiency eff(*GenJetEffNum,*GenJetEffDen);
+	fout.cd();
+	dRMatch.Write("dRtoClus");
+	DistToClus.Write("DistToClus");
+	PtRatio.Write("PtRatio");
+	TEfficiency eff(GenJetEffNum,GenJetEffDen);
 	eff.Write("MatchingEfficiencyPt");
-	fout->Close();
+	TEfficiency effEta(GenJetEtaEffNum,GenJetEtaEffDen);
+	effEta.Write("MatchingEfficiencyEta");
+	fout.Close();
+	/*
+	delete GenJetEffNum;
+	delete GenJetEffDen;
+	delete dRMatch;
+	delete DistToClus;
+	delete PtRatio;
+	*/
 	return 0;
 } //end main

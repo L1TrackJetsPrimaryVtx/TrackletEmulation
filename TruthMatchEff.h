@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////
 // This class has been automatically generated on
 // Tue Oct  3 15:02:42 2017 by ROOT version 5.34/37
 // from TTree eventTree/Event tree
@@ -189,11 +189,11 @@ TruthMatchEff::TruthMatchEff(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("TTBar_D13_PU200HighStats.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("QCD_D13_PU200PtHat50.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("TTBar_D13_PU200HighStats.root","READ");
+         f = new TFile("QCD_D13_PU200PtHat50.root","READ");
       }
-      TDirectory * dir = (TDirectory*)f->Get("TTBar_D13_PU200HighStats.root:/L1TrackNtuple");
+      TDirectory * dir = (TDirectory*)f->Get("QCD_D13_PU200PtHat50.root:/L1TrackNtuple");
       dir->GetObject("eventTree",tree);
 
    }
