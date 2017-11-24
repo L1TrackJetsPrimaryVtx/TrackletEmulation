@@ -17,13 +17,15 @@
 //Arguments: argv[1]: 1 for 1trk, 2 for tp. argv[2]: number of zbins (default 64).
 int main(int argc, char ** argv){
    //Numbers to specify which events to start and finish on.
-	int eventstart = 0;
-	int eventend = 99999;      //if higher than number of events, will end with last event.
+	int eventstart = 96000;
+	int eventend = 100000;      //if higher than number of events, will end with last event.
    
    //If second number specified it is number of zbins
    //Default 64.
 	string nz = "64";
 	int nzbins = 64;
+	int start=0;
+	int end=0;
 	if(argc == 3){
 		nz = argv[2];
 		nzbins = atoi(argv[2]);
@@ -45,7 +47,7 @@ int main(int argc, char ** argv){
             exit(0);
         }
 
-	struct track_data * tracks = (struct track_data *)malloc(2*numtracks * sizeof(struct track_data));
+	struct track_data * tracks = (struct track_data *)malloc(4*numtracks * sizeof(struct track_data));
 	string data_in;
   //Open input file and all output files.
 	ifstream in_tracks;
@@ -78,7 +80,7 @@ int main(int argc, char ** argv){
 	TFile fout(rootname.c_str(),"RECREATE");
 	TH1F dRMatch("dRMatch", "#Delta R (Cluster, Gen Jet)", 100, 0.0, 1.0);
 	TH2F DistToClus("DistToClus", "#Delta #eta/#phi (Cluster, Gen Jet)", 100, -0.5, 0.5, 100, -0.5,0.5);
-	TH1F PtRatio("PtRatio", "Energy Ratio Track Jets / Gen Jets ", 100, 0.8,1.2);
+	TH1F PtRatio("PtRatio", "Energy Ratio Track Jets / Gen Jets ", 100, 0.,1.);
 	TH1F GenJetEffNum("GenJetEffNum", "Gen Jet Match Efficiency", 60, 0, 300);
 	TH1F GenJetEffDen("GenJetEffDen", "Gen Jet Match Efficiency", 60, 0, 300);
 	TH1F GenJetEtaEffNum("GenJetEtaEffNum", "Gen Jet Match Efficiency", 50, -2.5, 2.5);
@@ -89,8 +91,8 @@ int main(int argc, char ** argv){
 	getline(in_tracks, data_in, ' ');
         string data;
 	float distance;
-	//for (Long64_t jentry=0; jentry<EventClass.GetNevents();jentry++) {
-	for (Long64_t jentry=0; jentry<2000;jentry++) {
+	//for (Long64_t jentry=48000; jentry<EventClass.GetNevents();jentry++) {
+	for (Long64_t jentry=eventstart; jentry<eventend;jentry++) {
 		EventClass.GetEntry(jentry);
 		struct mc_data * mcdat = (struct mc_data *)malloc(10*sizeof(struct mc_data));
 		if(EventClass.MC_lep->at(0)>0)continue;
@@ -107,22 +109,26 @@ int main(int argc, char ** argv){
 	   				out_clusts << i << " pT: " << mcdat[i].ogpt << " eta: " << mcdat[i].ogeta << " phi: " << mcdat[i].ogphi << endl;
 				}
 				*/
+		        for(int i = 0; i < ntp; ++i){	
+				GenJetEffDen.Fill(mcdat[i].ogpt);	
+				GenJetEtaEffDen.Fill(mcdat[i].ogeta);
+			}
 		 	if(mcdat==NULL)continue;
 			int ntracks=0;
-			for(unsigned int t=0; t<EventClass.tp_pt->size(); ++t){
-				if(EventClass.tp_z0->at(t)!=EventClass.tp_z0->at(t))continue;
-				tracks[ntracks].pT =EventClass.tp_pt->at(t);
-				tracks[ntracks].eta =EventClass.tp_eta->at(t);
-				tracks[ntracks].phi =EventClass.tp_phi->at(t);
-				tracks[ntracks].z =EventClass.tp_z0->at(t);	
+			for(unsigned int t=0; t<EventClass.trk_pt->size(); ++t){
+				if(EventClass.trk_z0->at(t)!=EventClass.trk_z0->at(t))continue;
+				tracks[ntracks].pT =EventClass.trk_pt->at(t);
+				tracks[ntracks].eta =EventClass.trk_eta->at(t);
+				tracks[ntracks].phi =EventClass.trk_phi->at(t);
+				tracks[ntracks].z =EventClass.trk_z0->at(t);	
 				tracks[ntracks].bincount = 0;
-				if(tracks[ntracks].pT >= 2.0 && fabs(tracks[ntracks].eta) < 2.4 && fabs(tracks[ntracks].z) < 15.0 && EventClass.tp_nstublayers->at(t)>=4){
+				if(tracks[ntracks].pT >= 2.0 && fabs(tracks[ntracks].eta) < 2.4 && fabs(tracks[ntracks].z) < 15.0 && EventClass.trk_chi2->at(t)<5){// && EventClass.tp_nstublayers->at(t)>=4){
 				++ntracks;		
 				}
 			}
 			//std::cout<<"ntracks "<<jentry<<std::endl;
 	         mcdat->ntracks = ntracks;
-		if(ntracks==0)continue;
+		if(ntracks<=1)continue;
              	 struct maxzbin * mzb = L2_cluster(tracks, mcdat, nzbins);	
              	 if(mzb == NULL){
 			//std::cout<<"No Clusters "<<std::endl;
@@ -173,11 +179,9 @@ int main(int argc, char ** argv){
 			*/
 	        } //for each cluster
 	        for(int b = 0; b < ntp; b++){//for each gen jet
-			GenJetEffDen.Fill(mzb->mcd[b].ogpt);	
-			GenJetEtaEffDen.Fill(mzb->mcd[b].ogeta);
 			for(int k = 0; k < mzb->nclust; ++k){
 				distance = sqrt(pow(mzb->mcd[b].ogphi - mzb->clusters[k].phi, 2) + pow(mzb->mcd[b].ogeta - mzb->clusters[k].eta, 2));	
-				if(distance<0.3){
+				if(distance<0.3 && mzb->clusters[k].pTtot>10){
 					GenJetEffNum.Fill(mzb->mcd[b].ogpt);	
 					GenJetEtaEffNum.Fill(mzb->mcd[b].ogeta);
 					break;
@@ -187,7 +191,8 @@ int main(int argc, char ** argv){
 	    	free(mzb->mcd);
 	    	free(mzb->clusters);
 	    	free(mzb);
- 		//free(tracks);
+	if(jentry%1000==0)std::cout<<"Event "<<jentry<<std::endl;
+	//free(tracks);
 	}
 
         //out_clusts << "****" << nevents << " events****" << endl;
