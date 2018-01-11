@@ -106,7 +106,8 @@ int main(int argc, char ** argv){
 	getline(in_tracks, data_in, ' ');
         string data;
 	float distance;
-	for (Long64_t jentry=eventstart; jentry<eventend;jentry++) {
+	
+	for (Long64_t jentry=eventstart; jentry<MinBiasEvents.GetNevents();jentry++) {
 		MinBiasEvents.GetEntry(jentry);
 		struct mc_data * mcdat = (struct mc_data *)malloc(20*sizeof(struct mc_data));
 			int ntracks=0;
@@ -162,16 +163,14 @@ int main(int argc, char ** argv){
 				std::cout<<"Jet Min Bias for high HT Event "<<MinBiasEvents.recojet_pt->at(j)<<", "<<MinBiasEvents.recojet_eta->at(j)<<", "<<MinBiasEvents.recojet_phi->at(j)<<std::endl;
 			}
 		}
-		//for(int j=0; j<clusters.size(); ++j)std::cout<<"Clusters "<<clusters[clusters.size()-(j+1)]<<std::endl;
 		ClusterHT.Fill(HTSum);
 		ClusterHTNtracks.Fill(HTSumNtracks);
-		//std::cout<<"HT from clustering"<<HTSum<<std::endl;
                 free(mzb->mcd);
                 free(mzb->clusters);
                 free(mzb);
 	}
-	//for (Long64_t jentry=0; jentry<EventClass.GetNevents();jentry++) {
-	for (Long64_t jentry=eventstart; jentry<eventend;jentry++){
+	for (Long64_t jentry=0; jentry<EventClass.GetNevents();jentry++) {
+	//for (Long64_t jentry=eventstart; jentry<eventend;jentry++){
 		EventClass.GetEntry(jentry);
 		struct mc_data * mcdat = (struct mc_data *)malloc(20*sizeof(struct mc_data));
 		if(EventClass.MC_lep->at(0)>0)continue;

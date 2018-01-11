@@ -253,6 +253,7 @@ public :
    virtual ~PUAnalyzer();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
+   virtual Int_t    GetNevents(){return fChain->GetEntries();};
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
    virtual void     Loop();
@@ -268,11 +269,11 @@ PUAnalyzer::PUAnalyzer(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("MinBias_D13_PU200New.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("MinBias_D13_PU200Test.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("MinBias_D13_PU200New.root");
+         f = new TFile("MinBias_D13_PU200Test.root");
       }
-      TDirectory * dir = (TDirectory*)f->Get("MinBias_D13_PU200New.root:/L1TrackNtuple");
+      TDirectory * dir = (TDirectory*)f->Get("MinBias_D13_PU200Test.root:/L1TrackNtuple");
       dir->GetObject("eventTree",tree);
 
    }
