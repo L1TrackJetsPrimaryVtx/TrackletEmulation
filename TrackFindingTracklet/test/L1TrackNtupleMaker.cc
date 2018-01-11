@@ -1789,10 +1789,12 @@ double vtxZ=0;
 htmp->Reset();
 htmp_weight->Reset();
 for(unsigned int z=0; z<m_trk_z0->size(); ++z){
+     if(m_trk_nstub->at(z)<5)continue;
      if(m_trk_pt->at(z)<2)continue;
      if(fabs(m_trk_z0->at(z))>25.)continue;
      if(m_trk_z0->at(z)!=m_trk_z0->at(z))continue;
      if(m_trk_chi2->at(z)>5)continue;
+     if(m_trk_pt->at(z)>50)continue;
      float pt=m_trk_pt->at(z);
      htmp -> Fill( m_trk_z0->at(z) );
      htmp_weight -> Fill( m_trk_z0->at(z), pt );
@@ -1881,7 +1883,8 @@ int this_tp = 0;
         if ( hasStubInLayer[isum] == 2) nStubLayerTP_g += 1;
    }
 
-     if(tp_ptr->pt()<2)continue;
+    if(tp_ptr->pt()>50)continue;
+    if(tp_ptr->pt()<2)continue;
      if(fabs(tp_ptr->vz())>25.)continue;
    if(nStubLayerTP<4)continue;
     float  tmp_tp_vx=tp_ptr->vx();
