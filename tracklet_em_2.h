@@ -54,6 +54,7 @@ struct maxzbin {
 	int nclust;          //number of clusters in this bin.
 	struct etaphibin * clusters;     //list of all the clusters in this bin.
 	float ht;   //sum of all cluster pTs--only the zbin with the maximum ht is stored.
+        float zcenter;
 };
 
 const int netabins = 24;

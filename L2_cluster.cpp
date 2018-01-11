@@ -214,6 +214,7 @@ struct maxzbin * L2_cluster(struct track_data * tracks, struct mc_data * mcd, in
 				mzb->clusters[k].numtracks = L2cluster[k].numtracks;
 			}
 			mzb->ht = ht;
+			mzb->zcenter=(zmin+zmax)/2.0;
 		}
 	       //Prepare for next zbin!
 		zmin = zmin + zstep;
