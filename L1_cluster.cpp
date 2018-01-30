@@ -1,10 +1,10 @@
 #include "tracklet_em_2.h"
 
-struct etaphibin * L1_cluster(struct etaphibin * etaslice){
+etaphibin * L1_cluster(etaphibin * etaslice){
 
-		struct etaphibin * clusters = (struct etaphibin *)malloc(nphibins/2 * sizeof(struct etaphibin));
+		etaphibin * clusters = (etaphibin *)malloc(nphibins/2 * sizeof(etaphibin));
 	//Find eta-phibin with maxpT, make center of cluster, add neighbors if not already used.
-		int hipT;
+		float hipT;
 		int pmax;
 		int nclust = 0;
 

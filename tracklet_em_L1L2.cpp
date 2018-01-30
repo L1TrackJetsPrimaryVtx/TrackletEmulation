@@ -46,7 +46,7 @@ int main(int argc, char ** argv){
             exit(0);
         }
 
-	struct track_data * tracks = (struct track_data *)malloc(20*numtracks * sizeof(struct track_data));
+	struct track_data * tracks = (struct track_data *)malloc(numtracks * sizeof(struct track_data));
 	string data_in;
   //Open input file and all output files.
 	ifstream in_tracks;
@@ -106,11 +106,11 @@ int main(int argc, char ** argv){
 	getline(in_tracks, data_in, ' ');
         string data;
 	float distance;
-	
-	for (Long64_t jentry=eventstart; jentry<MinBiasEvents.GetNevents();jentry++) {
+        for (Long64_t jentry=eventstart; jentry<eventend;jentry++) {
+//	for (Long64_t jentry=eventstart; jentry<MinBiasEvents.GetNevents();jentry++) {
 		MinBiasEvents.GetEntry(jentry);
-		struct mc_data * mcdat = (struct mc_data *)malloc(20*sizeof(struct mc_data));
-			int ntracks=0;
+		struct mc_data * mcdat = (struct mc_data *)malloc(10*sizeof(struct mc_data));
+               		int ntracks=0;
 			for(unsigned int t=0; t<MinBiasEvents.trk_pt->size(); ++t){
 				if(MinBiasEvents.trk_z0->at(t)!=MinBiasEvents.trk_z0->at(t))continue;
 				//if(MinBiasEvents.trk_eventid->at(t)>0)continue;
@@ -126,7 +126,7 @@ int main(int argc, char ** argv){
 			//std::cout<<"ntracks "<<jentry<<std::endl;
 	         mcdat->ntracks = ntracks;
 		if(ntracks<1)continue;
-             	struct maxzbin * mzb = L2_cluster(tracks, mcdat, nzbins);	
+             	struct maxzbin * mzb = L2_cluster(tracks, mcdat, nzbins,ntracks);	
 		float HTSum=0;
 		float HTSumNtracks=0;
 		std::vector<float>clusters;
@@ -147,15 +147,6 @@ int main(int argc, char ** argv){
 	 			if(mzb->clusters[k].pTtot<10)continue;
 				std::cout<<"Clusters for high HT Event "<<mzb->clusters[k].pTtot<<", "<<mzb->clusters[k].eta<<", "<<mzb->clusters[k].phi<<std::endl;
 			}
-			/*
-			for(unsigned int t=0; t<MinBiasEvents.trk_pt->size(); ++t){
-				if(MinBiasEvents.trk_z0->at(t)!=MinBiasEvents.trk_z0->at(t))continue;
-				//if(fabs(MinBiasEvents.trk_z0->at(t)-MinBiasEvents.pv_L1reco->at(0))>0.5)continue;
-				if(fabs(MinBiasEvents.trk_z0->at(t)-mzb->zcenter)>0.5)continue;
-				std::cout<<"Trk Min Bias for high HT Event "<<MinBiasEvents.trk_pt->at(t)<<", "<<MinBiasEvents.trk_eta->at(t)<<", "<<MinBiasEvents.trk_phi->at(t)<<std::endl;
-	
-			}
-			*/
 			std::cout<<"reco jet size "<<MinBiasEvents.recojet_vz->size()<<std::endl;	
 		        for(unsigned int j=0; j<MinBiasEvents.recojet_vz->size(); ++j){
            			if(MinBiasEvents.recojet_pt->at(j)<10)continue;
@@ -165,17 +156,24 @@ int main(int argc, char ** argv){
 		}
 		ClusterHT.Fill(HTSum);
 		ClusterHTNtracks.Fill(HTSumNtracks);
-                free(mzb->mcd);
-                free(mzb->clusters);
-                free(mzb);
+		free(mcdat);
+          //      free(mzb->mcd);
+          //      free(mzb->clusters);
+                //free(mzb);
+	for(int i = 0; i < nzbins-1; i++){	
+	  if(&all_zbins[i] == NULL || &all_zbins[i].mcd == NULL) continue;
+	    free(all_zbins[i].clusters);
+	}	  
+	free(all_zbins);
+
 	}
-	for (Long64_t jentry=0; jentry<EventClass.GetNevents();jentry++) {
-	//for (Long64_t jentry=eventstart; jentry<eventend;jentry++){
+	//for (Long64_t jentry=0; jentry<EventClass.GetNevents();jentry++) {
+	for (Long64_t jentry=eventstart; jentry<eventend;jentry++){
 		EventClass.GetEntry(jentry);
-		struct mc_data * mcdat = (struct mc_data *)malloc(20*sizeof(struct mc_data));
+		struct mc_data * mcdat = (struct mc_data *)malloc(10*sizeof(struct mc_data));
 		if(EventClass.MC_lep->at(0)>0)continue;
 			//std::cout<<"L1 PV z "<<EventClass.pv_L1->at(0)<<std::endl;
-			int ntp=0;
+		int ntp=0;
 		       for (int g=0; g<EventClass.genjetak4_phi->size(); ++g){
 				mcdat[ntp].ogpt =EventClass.genjetak4_pt->at(g);
 				mcdat[ntp].ogeta =EventClass.genjetak4_eta->at(g);
@@ -209,7 +207,7 @@ int main(int argc, char ** argv){
 			//std::cout<<"ntracks "<<jentry<<std::endl;
 	         mcdat->ntracks = ntracks;
 		if(ntracks<1)continue;
-             	 struct maxzbin * mzb = L2_cluster(tracks, mcdat, nzbins);	
+             	 struct maxzbin * mzb = L2_cluster(tracks, mcdat, nzbins,ntracks);	
              	 if(mzb == NULL){
 			//std::cout<<"No Clusters "<<std::endl;
                 	continue;
@@ -278,13 +276,15 @@ int main(int argc, char ** argv){
 			DetaRes.Fill(mineta);	
 			DistToClus.Fill(mineta,minphi);
 	  	}
-	    	free(mzb->mcd);
-	    	free(mzb->clusters);
-	    	free(mzb);
+	for(int i = 0; i < nzbins-1; i++){	
+	  if(&all_zbins[i] == NULL || &all_zbins[i].mcd == NULL) continue;
+	    free(all_zbins[i].clusters);
+	}	  
+	free(all_zbins);
+
 	if(jentry%100==0)std::cout<<"Event "<<jentry<<std::endl;
 	//free(tracks);
 	}
-
         out_clusts << "****" << nevents << " events****" << endl;
 	if(tracks!=NULL)free(tracks);
         in_tracks.close();

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string>
 #include <cstdlib>
+
 #include <TFile.h>
 #include <TH1F.h>
 #include <TH2F.h>
@@ -47,12 +48,9 @@ struct etaphibin {
 //store important information for plots
 struct maxzbin {
 	int znum;            //Numbered from 0 to nzbins (16, 32, or 64) in order.
-/*	float phimc;
-	float etamc;
-	float pTmc;*/
-	struct mc_data * mcd; //array of jets from input file.
+	mc_data * mcd; //array of jets from input file.
 	int nclust;          //number of clusters in this bin.
-	struct etaphibin * clusters;     //list of all the clusters in this bin.
+	etaphibin * clusters;     //list of all the clusters in this bin.
 	float ht;   //sum of all cluster pTs--only the zbin with the maximum ht is stored.
         float zcenter;
 };
@@ -65,11 +63,11 @@ const float etastep = 2.0 * maxeta / netabins;
 //Any tracks with pT > 200 GeV should be capped at 200
 const float pTmax = 200.0;
 //Upper bound on number of tracks per event.
-const int numtracks = 50;
-const int nphibins = 32;
+const int numtracks = 500;
+const int nphibins = 32;       //*******************Changed from 28***********************
 //phistep is the width of a phibin.
 const float phistep = 2*M_PI / nphibins;
 //function to find all clusters, find zbin with max ht. In file find_clusters.cpp
-struct maxzbin * L2_cluster(struct track_data * tracks, struct mc_data * mcd, int nzbins);
-struct etaphibin * L1_cluster(struct etaphibin * etaslice);
-
+maxzbin * L2_cluster(track_data*, mc_data*, int, int);
+etaphibin * L1_cluster(etaphibin*);
+extern maxzbin * all_zbins; //stores cluster data for all the zbins for any given event.
