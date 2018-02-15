@@ -1738,12 +1738,12 @@ double vtxZ=0;
 htmp->Reset();
 htmp_weight->Reset();
 for(unsigned int z=0; z<m_trk_z0->size(); ++z){
-     //if(m_trk_nstub->at(z)<5)continue;
+     if(m_trk_nstub->at(z)<5)continue;
      if(m_trk_pt->at(z)<2)continue;
      if(m_trk_pt->at(z)!=m_trk_pt->at(z))continue;
      if(fabs(m_trk_z0->at(z))>15.)continue;
      if(m_trk_z0->at(z)!=m_trk_z0->at(z))continue;
-     //if(m_trk_chi2->at(z)>5)continue;
+     if(m_trk_chi2->at(z)>5)continue;
 
      float pt=m_trk_pt->at(z);
      if(m_trk_pt->at(z)>200)pt=200;

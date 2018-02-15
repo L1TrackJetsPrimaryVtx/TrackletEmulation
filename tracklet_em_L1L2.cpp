@@ -220,7 +220,7 @@ int main(int argc, char ** argv){
 	for (Long64_t jentry=eventstart; jentry<eventend;jentry++){
 		EventClass.GetEntry(jentry);
 		struct mc_data * mcdat = (struct mc_data *)malloc(10*sizeof(struct mc_data));
-		if(EventClass.MC_lep->at(0)!=1)continue;
+		if(EventClass.MC_lep->at(0)!=0)continue;
 			//std::cout<<"L1 PV z "<<EventClass.pv_L1->at(0)<<std::endl;
 		int ntp=0;
 		       for (int g=0; g<EventClass.genjetak4_phi->size(); ++g){
