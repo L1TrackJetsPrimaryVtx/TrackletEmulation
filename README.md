@@ -5,10 +5,11 @@ L1_cluster does phi-clustering in each etabin, and L2_cluster stitches everythin
 11/21/2017: updated to use an algorithm closer to the firmware algorithm. Also some bug fixes.
 
 02/15/2018: Setup a rough version for Code Sharing with RAL. Includes:
-	Trigger Turn On Code
-	Truth Matching for Efficiency SUmmary
-	L1 Rates in Min Bias Sample
-	Copy of L1TrackNtupler with Fast Jets
+
+	Trigger Turn On Code,
+	Truth Matching for Efficiency Summary,
+	L1 Rates in Min Bias Sample,
+	Copy of L1TrackNtupler with Fast Jets,
 	(To compile the necessary C++ code and ROOT Macros)
 	make all 	
 	
