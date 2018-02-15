@@ -1,7 +1,7 @@
 void QuickEffPlot(){
-gROOT->ProcessLine(".L tdrStyle.C");
-setTDRStyle();
-TFile*fin=new TFile("FastJetEffQCDPtHat30Plots.root", "READ");
+//gROOT->ProcessLine(".L tdrStyle.C");
+//setTDRStyle();
+TFile*fin=new TFile("FastJetEffPlots.root", "READ");
 TEfficiency*EffGenChgE=(TEfficiency*)fin->Get("GenTruthJetChgE");
 TEfficiency*EffGenChgEPt10=(TEfficiency*)fin->Get("GenTruthJetPt10ChgE");
 TEfficiency*EffSimChgEPt10=(TEfficiency*)fin->Get("SIMTruthJetPt10ChgE");
@@ -27,7 +27,7 @@ TEfficiency*EffRecoPt10=(TEfficiency*)fin->Get("RecoTruthPt");
     //TEfficiency*EffRecoL1L2Pt=(TEfficiency*)fin2->Get("MatchingEfficiencyPt");
     //TEfficiency*EffRecoL1L2Eta=(TEfficiency*)fin2->Get("MatchingEfficiencyEta");
     
-    TFile*fin3=new TFile("em_outQCDpt30Ntracks1_tp_16z.txt.root", "READ");
+    TFile*fin3=new TFile("em_out_tp_64Merged.TruthVertex.root", "READ");
     TEfficiency*EffNtracks1RecoL1L2Pt=(TEfficiency*)fin3->Get("MatchingEfficiencyPt");
     TEfficiency*EffNtracks1RecoL1L2Eta=(TEfficiency*)fin3->Get("MatchingEfficiencyEta");
     fin->cd();

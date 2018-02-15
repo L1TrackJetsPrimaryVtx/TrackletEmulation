@@ -218,7 +218,10 @@ maxzbin * L2_cluster(track_data * tracks, mc_data * mcd, int nzbins, int ntracks
           //sum up all pTs in this zbin to find ht.
 		float ht = 0;
 		for(int k = 0; k < nclust; ++k){
+		//	if(L2cluster[k].pTtot<pTmax)
 			ht += L2cluster[k].pTtot;
+                  //      else ht +=pTmax;
+			//ht += L2cluster[k].pTtot;
                 }
 
 	   //if ht is larger than previous max, this is the new vertex zbin.

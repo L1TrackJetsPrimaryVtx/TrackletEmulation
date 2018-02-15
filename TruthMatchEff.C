@@ -85,6 +85,7 @@ void TruthMatchEff::Loop()
       nb = fChain->GetEntry(jentry);
        nbytes += nb;
        if(MC_lep->at(0)>0)continue;
+	if(trk_pt->size()==0)continue;	
        float genHT=0;
        for (int g=0; g<genjetak4_phi->size(); ++g){
            bool Match=false;
@@ -148,7 +149,7 @@ void TruthMatchEff::Loop()
                float deta=recojet_eta->at(j)-genjetak4_eta->at(g);
                float dphi=recojet_phi->at(j)-genjetak4_phi->at(g);
                float dR=sqrt((deta*deta)+(dphi*dphi));
-               if(dR<0.4){Match=true; jetindex=j;break;}
+               if(dR<0.3){Match=true; jetindex=j;break;}
            }
            if(Match){
                RecoChgEnergyFracNum->Fill(genjetak4_chgfrac->at(g)/genjetak4_p->at(g));

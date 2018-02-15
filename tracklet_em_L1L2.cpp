@@ -39,7 +39,7 @@ int main(int argc, char ** argv){
  	    filename = "trk_output_v2.txt";
         }
         else if(atoi(argv[1]) == 2){
-            filename = "tp_output_v2.txt";
+            filename = "tp_output_v2L1Rate.txt";
         } 
         else {
             cout << "Error: please specify 1 for 1trk or 2 for tp."<<endl;
@@ -57,7 +57,7 @@ int main(int argc, char ** argv){
              outname = "em_out_trk_" + nz + "z.txt";
         } 
         else {
-             outname = "em_out_tp_" + nz + "z.txt";
+             outname = "em_out_tp_" + nz + "Merged.txt";
         }
 	outname=outname+argv[2];
 	out_clusts.open(outname.c_str());
@@ -79,7 +79,9 @@ int main(int argc, char ** argv){
 	string rootname=outname+".root";
 	TFile fout(rootname.c_str(),"RECREATE");
 	TH1F DeltaZ("DeltaZ", "#Delta Z (L1 PV , HTz)", 100, -5, 5);
+        TH2F JetMultiplicity("JetMultiplicity", "Number of Clus ", 20, 0, 20,20, 0, 20);	
 	TH1F NumClusters("NumClusters", "Number of Clus ", 100, 0, 100);
+	TH1F  dRMatchFastjet(" dRMatchFastjet", "#Delta R (Cluster, Fast Jet)", 100, 0.0, 1.0);
 	TH1F dRMatch("dRMatch", "#Delta R (Cluster, Gen Jet)", 100, 0.0, 1.0);
 	TH1F DetaRes("DetaRes", "Delta #eta res ", 100, -0.5, 0.5);
 	TH1F DphiRes("DphiRes", "Delta #phi res ", 100, -0.5, 0.5);
@@ -93,11 +95,34 @@ int main(int argc, char ** argv){
 	TH1F GenJetNtracksEffDen("GenJetNtracksEffDen", "Gen Jet Match Efficiency", 60, 0, 300);
 	TH1F GenJetNtracksEtaEffNum("GenJetNtracksEtaEffNum", "Gen Jet Match Efficiency", 50, -2.5, 2.5);
 	TH1F GenJetNtracksEtaEffDen("GenJetNtracksEtaEffDen", "Gen Jet Match Efficiency", 50, -2.5, 2.5);
+	TH1D ClusterMHTNtracks("ClusterMHTNtracks","H_{T}",100, 0, 2000);	
+	TH1D ClusterMHT("ClusterMHT","H_{T}",100, 0, 2000);	
 	TH1D ClusterHTNtracks("ClusterHTNtracks","H_{T}",100, 0, 2000);	
 	TH1D ClusterHT("ClusterHT","H_{T}",100, 0, 2000);	
 	TH1D ClusterLeadJet("ClusterLeadJet","H_{T}",100, 0, 500);	
 	TH1D ClusterDiJet("ClusterDiJet","H_{T}",100, 0, 500);	
 	TH1D ClusterQuadJet("ClusterQuadJet","H_{T}",100, 0, 500);	
+	TH1D ClusterLeadNtracks("ClusterLeadNtracks","H_{T}",100, 0, 500);	
+	TH1D ClusterDiNtracks("ClusterDiNtracks","H_{T}",100, 0, 500);	
+	TH1D ClusterQuadNtracks("ClusterQuadNtracks","H_{T}",100, 0, 500);	
+	
+    TH1D*hGenJetHTPass200=new TH1D("hGenJetHTPass200", "Gen H_{T}",100, 0, 2000);
+    TH1D*hGenJetHTPass325=new TH1D("hGenJetHTPass325", "Gen H_{T}",100, 0, 2000);
+    TH1D*hGenJetHTPass250=new TH1D("hGenJetHTPass250", "Gen H_{T}",100, 0, 2000);
+
+    TH1D*hGenJetRecoHTPass160=new TH1D("hGenJetRecoHTPass160", "Gen H_{T}",100, 0, 2000);
+    TH1D*hGenJetRecoHTPass200=new TH1D("hGenJetRecoHTPass200", "Gen H_{T}",100, 0, 2000);
+    TH1D*hGenJetRecoHTPass325=new TH1D("hGenJetRecoHTPass325", "Gen H_{T}",100, 0, 2000);
+    TH1D*hGenJetRecoHTPass250=new TH1D("hGenJetRecoHTPass250", "Gen H_{T}",100, 0, 2000);
+
+    TH1D*hGenJetRecoMHTPass150=new TH1D("hGenJetRecoMHTPass150", "Gen H_{T}",100, 0, 2000);
+    TH1D*hGenJetRecoMHTPass100=new TH1D("hGenJetRecoMHTPass100", "Gen H_{T}",100, 0, 2000);
+
+    TH1D*hGenJetMHT=new TH1D("hGenJetMHT", "Gen H_{T}",100, 0, 2000);
+    TH1D*hGenJetHT=new TH1D("hGenJetHT", "Gen H_{T}",100, 0, 2000);
+
+
+
 	PUAnalyzer MinBiasEvents;
 	MinBiasEvents.Loop();	
 	TruthMatchEff EventClass;
@@ -114,33 +139,55 @@ int main(int argc, char ** argv){
 			for(unsigned int t=0; t<MinBiasEvents.trk_pt->size(); ++t){
 				if(MinBiasEvents.trk_z0->at(t)!=MinBiasEvents.trk_z0->at(t))continue;
 				//if(MinBiasEvents.trk_eventid->at(t)>0)continue;
+				//saturate pT here	
 				tracks[ntracks].pT =MinBiasEvents.trk_pt->at(t);
+				if(MinBiasEvents.trk_pt->at(t)>200)tracks[ntracks].pT =200;
 				tracks[ntracks].eta =MinBiasEvents.trk_eta->at(t);
 				tracks[ntracks].phi =MinBiasEvents.trk_phi->at(t);
 				tracks[ntracks].z =MinBiasEvents.trk_z0->at(t);	
 				tracks[ntracks].bincount = 0;
-				if(tracks[ntracks].pT >= 2.0 && fabs(tracks[ntracks].eta) < 2.4 && fabs(tracks[ntracks].z) < 15.0  && MinBiasEvents.trk_chi2->at(t)<5){
+				if(tracks[ntracks].pT >= 2.0 && fabs(tracks[ntracks].eta) < 2.4 && fabs(tracks[ntracks].z) < 15.0  && MinBiasEvents.trk_chi2->at(t)<5 && MinBiasEvents.trk_nstub->at(t)>4){
 				++ntracks;		
 				}
 			}
 			//std::cout<<"ntracks "<<jentry<<std::endl;
 	         mcdat->ntracks = ntracks;
-		if(ntracks<1)continue;
+		//if(ntracks<1)continue;
              	struct maxzbin * mzb = L2_cluster(tracks, mcdat, nzbins,ntracks);	
 		float HTSum=0;
 		float HTSumNtracks=0;
+		int JetsNtracks=0;
+	        TLorentzVector MHT,MHTNtracks;	
 		std::vector<float>clusters;
+		std::vector<float>clustersNtracks;
 		for(int k = 0; k < mzb->nclust; ++k){
 	 		if(mzb->clusters[k].pTtot<10)continue;
 			HTSum=HTSum+(mzb->clusters[k].pTtot);
-			if(mzb->clusters[k].numtracks<2)continue;
-			HTSumNtracks=HTSumNtracks+mzb->clusters[k].pTtot;
 			clusters.push_back(mzb->clusters[k].pTtot);
+			if(mzb->clusters[k].numtracks<2)continue;
+			TLorentzVector temp(mzb->clusters[k].pTtot, mzb->clusters[k].eta, mzb->clusters[k].phi, mzb->clusters[k].pTtot *cosh(mzb->clusters[k].eta));
+			MHT=MHT+temp;
+			HTSumNtracks=HTSumNtracks+mzb->clusters[k].pTtot;
+			clustersNtracks.push_back(mzb->clusters[k].pTtot);
+			MHTNtracks=MHTNtracks+temp;
 		}
 		std::sort(clusters.begin(), clusters.end());
+		std::sort(clustersNtracks.begin(), clustersNtracks.end());
+		//for(int k = 0; k < clusters.size(); ++k)std::cout<<"Pt of Jets "<<clusters[k]<<std::endl;
 		if(clusters.size()>0)ClusterLeadJet.Fill(clusters[clusters.size()-1]);
+		else ClusterLeadJet.Fill(0);
 		if(clusters.size()>1)ClusterDiJet.Fill(clusters[clusters.size()-2]);
+		else ClusterDiJet.Fill(0);
 		if(clusters.size()>3)ClusterQuadJet.Fill(clusters[clusters.size()-4]);
+		else ClusterQuadJet.Fill(0);
+	
+		if(clustersNtracks.size()>0)ClusterLeadNtracks.Fill(clustersNtracks[clustersNtracks.size()-1]);
+		else ClusterLeadNtracks.Fill(0);
+		if(clustersNtracks.size()>1)ClusterDiNtracks.Fill(clustersNtracks[clustersNtracks.size()-2]);
+		else ClusterDiNtracks.Fill(0);
+		if(clustersNtracks.size()>3)ClusterQuadNtracks.Fill(clustersNtracks[clustersNtracks.size()-4]);
+		else ClusterQuadNtracks.Fill(0);
+		
 		if(HTSum>1200){
 			std::cout<<"Difference in L1 Z "<<MinBiasEvents.pv_L1reco->at(0)-mzb->zcenter<<std::endl;
 			for(int k = 0; k < mzb->nclust; ++k){
@@ -154,6 +201,8 @@ int main(int argc, char ** argv){
 				std::cout<<"Jet Min Bias for high HT Event "<<MinBiasEvents.recojet_pt->at(j)<<", "<<MinBiasEvents.recojet_eta->at(j)<<", "<<MinBiasEvents.recojet_phi->at(j)<<std::endl;
 			}
 		}
+		ClusterMHT.Fill(MHT.Pt());
+		ClusterMHTNtracks.Fill(MHTNtracks.Pt());
 		ClusterHT.Fill(HTSum);
 		ClusterHTNtracks.Fill(HTSumNtracks);
 		free(mcdat);
@@ -171,7 +220,7 @@ int main(int argc, char ** argv){
 	for (Long64_t jentry=eventstart; jentry<eventend;jentry++){
 		EventClass.GetEntry(jentry);
 		struct mc_data * mcdat = (struct mc_data *)malloc(10*sizeof(struct mc_data));
-		if(EventClass.MC_lep->at(0)>0)continue;
+		if(EventClass.MC_lep->at(0)!=1)continue;
 			//std::cout<<"L1 PV z "<<EventClass.pv_L1->at(0)<<std::endl;
 		int ntp=0;
 		       for (int g=0; g<EventClass.genjetak4_phi->size(); ++g){
@@ -192,14 +241,18 @@ int main(int argc, char ** argv){
 			int ntracks=0;
 			for(unsigned int t=0; t<EventClass.trk_pt->size(); ++t){
 				if(EventClass.trk_z0->at(t)!=EventClass.trk_z0->at(t))continue;
+				//if(fabs(EventClass.trk_z0->at(t)-EventClass.pv_L1->at(0))>1.0)continue;
 				//if(EventClass.trk_eventid->at(t)>0)continue;
+				//saturate pT here	
 				tracks[ntracks].pT =EventClass.trk_pt->at(t);
+				if(EventClass.trk_pt->at(t)>200)tracks[ntracks].pT =200;
 				tracks[ntracks].eta =EventClass.trk_eta->at(t);
 				tracks[ntracks].phi =EventClass.trk_phi->at(t);
 				tracks[ntracks].z =EventClass.trk_z0->at(t);	
 				tracks[ntracks].bincount = 0;
-				if(tracks[ntracks].pT >= 2.0 && fabs(tracks[ntracks].eta) < 2.4 && fabs(tracks[ntracks].z) < 15.0  
-				//&& EventClass.tp_nstublayers->at(t)>=4){ 
+				if(tracks[ntracks].pT >= 2.0 && fabs( tracks[ntracks].eta) < 2.4 && fabs(tracks[ntracks].z) < 15.0  
+				&& EventClass.trk_nstub->at(t)>4  
+				//&& EventClass.tp_nstublayers->at(t)>4
 				&& EventClass.trk_chi2->at(t)<5){
 				++ntracks;		
 				}
@@ -208,6 +261,7 @@ int main(int argc, char ** argv){
 	         mcdat->ntracks = ntracks;
 		if(ntracks<1)continue;
              	 struct maxzbin * mzb = L2_cluster(tracks, mcdat, nzbins,ntracks);	
+		std::cout<<"Event "<<jentry<<std::endl;
              	 if(mzb == NULL){
 			//std::cout<<"No Clusters "<<std::endl;
                 	continue;
@@ -247,11 +301,36 @@ int main(int argc, char ** argv){
 			out_clusts << "   eta \t\t\t" << mzb->clusters[k].eta << endl;
 			out_clusts << "   pT \t\t\t"  << mzb->clusters[k].pTtot << endl;
 	        } //for each cluster
-		 NumClusters.Fill(ClusterCount);	
-	        for(int b = 0; b < ntp; b++){//for each gen jet
+	 int fastJetCount=0;
+                        for(unsigned int i=0; i<EventClass.recojet_pt->size(); ++i)if(EventClass.recojet_pt->at(i)>10)++fastJetCount;
+		                JetMultiplicity.Fill(fastJetCount,ClusterCount);	
+		 NumClusters.Fill(ClusterCount);
+			//float TwoLayerHT=0;	
+                        for(int k = 0; k < mzb->nclust; ++k){
+                                if( mzb->clusters[k].pTtot<10)continue;
+				//TwoLayerHT=TwoLayerHT+mzb->clusters[k].pTtot;
+                                float dRMin=9999;
+                                for(unsigned int i=0; i<EventClass.recojet_pt->size(); ++i){
+                                        if(EventClass.recojet_pt->at(i)<10)continue;
+                                        float deta=EventClass.recojet_eta->at(i) - mzb->clusters[k].eta;
+                                        float dphi=EventClass.recojet_phi->at(i) - mzb->clusters[k].phi;
+                                        if(sqrt(deta*deta + dphi*dphi)<dRMin)dRMin=sqrt(deta*deta + dphi*dphi);
+
+                                }
+                                dRMatchFastjet.Fill(dRMin);
+                        }	
+			float GenJetHT=0;
+     	TLorentzVector GenMHT;	
+	   for(int b = 0; b < ntp; b++){//for each gen jet
 			float mindistance=999.;
 			float mineta=999.;
 			float minphi=999.;
+			if(fabs(mzb->mcd[b].ogeta)>2.4)continue;
+			if(mzb->mcd[b].ogpt>30){
+				GenJetHT=GenJetHT+mzb->mcd[b].ogpt;
+                TLorentzVector temp(mzb->mcd[b].ogpt,mzb->mcd[b].ogeta, mzb->mcd[b].ogphi, mzb->mcd[b].ogpt *cosh(mzb->mcd[b].ogeta));
+				GenMHT=GenMHT+temp;
+			}
 			for(int k = 0; k < mzb->nclust; ++k){
 				distance = sqrt(pow(mzb->mcd[b].ogphi - mzb->clusters[k].phi, 2) + pow(mzb->mcd[b].ogeta - mzb->clusters[k].eta, 2));	
 				if(mindistance>distance){
@@ -276,13 +355,37 @@ int main(int argc, char ** argv){
 			DetaRes.Fill(mineta);	
 			DistToClus.Fill(mineta,minphi);
 	  	}
+	hGenJetMHT->Fill(GenMHT.Pt());
+	hGenJetHT->Fill(GenJetHT);
+	float HT=0;
+	float SingleJetPt=0;
+	float QuadJetPt=0;
+	float DiJetPt=0;
+                TLorentzVector MHT;
+                std::vector<float>clusters;
+                for(int k = 0; k < mzb->nclust; ++k){
+                                if( mzb->clusters[k].pTtot<10)continue;
+		if(mzb->clusters[k].numtracks>1){
+		HT=HT+mzb->clusters[k].pTtot;
+                TLorentzVector temp(mzb->clusters[k].pTtot, mzb->clusters[k].eta, mzb->clusters[k].phi, mzb->clusters[k].pTtot *cosh(mzb->clusters[k].eta));
+		MHT=MHT+temp;
+		clusters.push_back(mzb->clusters[k].pTtot);
+		}
+	}
+                std::sort(clusters.begin(), clusters.end());
+	if(MHT.Pt()>100)hGenJetRecoMHTPass100->Fill(GenMHT.Pt());
+	if(MHT.Pt()>150)hGenJetRecoMHTPass150->Fill(GenMHT.Pt());
+	if(HT>160)hGenJetRecoHTPass160->Fill(GenJetHT);
+	if(HT>200)hGenJetRecoHTPass200->Fill(GenJetHT);
+	if(HT>250)hGenJetRecoHTPass250->Fill(GenJetHT);
+	if(HT>325)hGenJetRecoHTPass325->Fill(GenJetHT);
 	for(int i = 0; i < nzbins-1; i++){	
 	  if(&all_zbins[i] == NULL || &all_zbins[i].mcd == NULL) continue;
 	    free(all_zbins[i].clusters);
 	}	  
 	free(all_zbins);
 
-	if(jentry%100==0)std::cout<<"Event "<<jentry<<std::endl;
+	//if(jentry%100==0)
 	//free(tracks);
 	}
         out_clusts << "****" << nevents << " events****" << endl;
@@ -307,12 +410,34 @@ int main(int argc, char ** argv){
 	TEfficiency effEta(GenJetEtaEffNum,GenJetEtaEffDen);
 	effEta.Write("MatchingEfficiencyEta");
 	effEtaNtracks.Write("MatchingEfficiencyNtracksEta");
+	ClusterMHT.Write("L1L2ClusterMHT");
+	ClusterMHTNtracks.Write("L1L2ClusterMHTNtracks");
 	ClusterHT.Write("L1L2ClusterHT");
 	ClusterHTNtracks.Write("L1L2ClusterHTNtracks");
+	ClusterLeadJet.Write("L1L2ClusterLeadJets");	
+	ClusterDiJet.Write("L1L2ClusterDiJets");	
+	ClusterQuadJet.Write("L1L2ClusterQuadJets");	
+	ClusterLeadNtracks.Write("L1L2ClusterLeadJetNtracks");	
+	ClusterDiNtracks.Write("L1L2ClusterDiJetNtracks");	
+	ClusterQuadNtracks.Write("L1L2ClusterQuadJetNtracks");	
+	        JetMultiplicity.Write("JetMultiplicityMap"); 
 	NumClusters.Write("NumberofJets");
 	DphiRes.Write("DeltaPhiRes");
 	DetaRes.Write("DeltaEtaRes");
 	DeltaZ.Write("ZVtxRes");
+        dRMatchFastjet.Write("dRtoFastJet");
+    TEfficiency*RecoThresh150MHT=new TEfficiency(*hGenJetRecoMHTPass150, *hGenJetMHT);
+    TEfficiency*RecoThresh100MHT=new TEfficiency(*hGenJetRecoMHTPass100, *hGenJetMHT);
+    TEfficiency*RecoThresh160=new TEfficiency(*hGenJetRecoHTPass160, *hGenJetHT);
+    TEfficiency*RecoThresh200=new TEfficiency(*hGenJetRecoHTPass200, *hGenJetHT);
+    TEfficiency*RecoThresh250=new TEfficiency(*hGenJetRecoHTPass250, *hGenJetHT);
+    TEfficiency*RecoThresh325=new TEfficiency(*hGenJetRecoHTPass325, *hGenJetHT);
+	RecoThresh150MHT->Write("RecoThresh150MHT");
+	RecoThresh100MHT->Write("RecoThresh100MHT");
+	RecoThresh160->Write("RecoThresh160HT");
+	RecoThresh200->Write("RecoThresh200HT");
+        RecoThresh250->Write("RecoThresh250HT");
+        RecoThresh325->Write("RecoThresh325HT");
 	fout.Close();
 
 	/*

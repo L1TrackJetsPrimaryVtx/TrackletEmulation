@@ -39,17 +39,15 @@ void PUAnalyzer::Loop()
     TH1D*hTPFastSingleJetPt=new TH1D("hTPFastSingleJetPt", "Gen H_{T}",100, 0, 500);
     TH1D*hTPFastDiJetPt=new TH1D("hTPFastDiJetPt", "Gen H_{T}",100, 0, 500);
     TH1D*hTPFastQuadJetPt=new TH1D("hTPFastQuadJetPt", "Gen H_{T}",100, 0, 500);
-
     TH1D*hFastJetNtracksHT=new TH1D("hFastJetNtracksHT", "Fast Jet H_{T}",100, 0, 2000);
 
     TH1D*hFastJetHT=new TH1D("hFastJetHT", "Fast Jet H_{T}",100, 0, 2000);
+    TH2D*hFastJetMHTHT=new TH2D("hFastJetMHTHT", "Fast Jet H_{T}",100, 0, 2000,100,0,2000);
     TH1D*hFastJetMHT=new TH1D("hFastJetMHT", "Fast Jet H_{T}",100, 0, 2000);
     TH1D*hFastJetMHTNtracks=new TH1D("hFastJetMHTNtracks", "Fast Jet H_{T}",100, 0, 2000);
-
     TH1D*hFastSingleJetPt=new TH1D("hFastSingleJetPt", "Gen H_{T}",100, 0, 500);
     TH1D*hFastDiJetPt=new TH1D("hFastDiJetPt", "Gen H_{T}",100, 0, 500);
     TH1D*hFastQuadJetPt=new TH1D("hFastQuadJetPt", "Gen H_{T}",100, 0, 500);
-    
     TH1D*hFastSingleJetPtNtracks=new TH1D("hFastSingleJetPtNtracks", "Gen H_{T}",100, 0, 500);
     TH1D*hFastDiJetPtNtracks=new TH1D("hFastDiJetPtNtracks", "Gen H_{T}",100, 0, 500);
     TH1D*hFastQuadJetPtNtracks=new TH1D("hFastQuadJetPtNtracks", "Gen H_{T}",100, 0, 500);
@@ -201,6 +199,7 @@ LeadJetPt=jet_pt->at(0);
        hFastJetHT->Fill(FastJetHT);
        hFastJetNtracksHT->Fill(FastJetNtracks);
        hFastJetMHT->Fill(MHT.Pt());
+	hFastJetMHTHT->Fill(FastJetHT,MHT.Pt());
        hFastJetMHTNtracks->Fill(MHTNtracks.Pt());
        if(FastJetHT>360)hGenJetRecoHTPass325->Fill(GenJetHT);
        if(FastJetHT>280)hGenJetRecoHTPass250->Fill(GenJetHT);
@@ -219,8 +218,8 @@ LeadJetPt=jet_pt->at(0);
    }
     TFile*fout=new TFile("PUJetsOutputMinBias.root", "RECREATE");
     fout->cd();
-    
-    
+//FILL THESE In A TRIGGER TURN On File    
+/*    
     TEfficiency*RecoThresh200=new TEfficiency(*hGenJetRecoHTPass200, *hGenJetHT);
     TEfficiency*RecoThresh250=new TEfficiency(*hGenJetRecoHTPass250, *hGenJetHT);
     TEfficiency*RecoThresh325=new TEfficiency(*hGenJetRecoHTPass325, *hGenJetHT);
@@ -248,7 +247,7 @@ LeadJetPt=jet_pt->at(0);
     RecoThresh200Ntracks->Write("RecoThresh200HTNtracks");
     RecoThresh250Ntracks->Write("RecoThresh250HTNtracks");
     RecoThresh325Ntracks->Write("RecoThresh325HTNtracks");
-
+*/
     /*
     Thresh120->Write("Thresh120HT");
     Thresh300->Write("Thresh300HT");
@@ -269,7 +268,7 @@ LeadJetPt=jet_pt->at(0);
     hFastDiJetPtNtracks->Write("RecoDiJetPtNtracks");
     hFastJetMHT->Write("RecoJetMHT");
     hFastJetMHTNtracks->Write("RecoJetMHTNtracks");
-
+    hFastJetMHTHT->Write("RecoJetMHTHT2D");
     hFastQuadJetPt->Write("RecoQuadJetPt");
     hFastQuadJetPtNtracks->Write("RecoQuadJetPtNtracks");
 
