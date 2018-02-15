@@ -914,11 +914,14 @@ m_jet_eta->clear();
 	//   rvtx_gen=sqrt(genpartIter ->daughter(0)->daughter(0) ->vx() * genpartIter ->daughter(0)->daughter(0) ->vx() + genpartIter ->daughter(0)->daughter(0) ->vy()*genpartIter ->daughter(0)->daughter(0) ->vy());
 	   //std::cout<<"PdgId "<<genpartIter ->daughter(0)->daughter(0)->pdgId()<<std::endl;
 	   //std::cout<<"R vertex "<<rvtx_gen<<std::endl;
-	   std::cout<<"MC z "<<part_zvertex<<std::endl;
+	   //std::cout<<"MC z "<<part_zvertex<<std::endl;
 	   break;	// 
 	}
     // }
 m_pv_MC->push_back(zvtx_gen);
+
+    int leptonicCount=0;
+/*
     bool leptonic=false;
         for (genpartIter = GenParticleHandle->begin(); genpartIter != GenParticleHandle->end(); ++genpartIter) {
 		if (abs(genpartIter ->pdgId())!=24)continue;
@@ -929,6 +932,15 @@ m_pv_MC->push_back(zvtx_gen);
 m_pv_MC_vr->push_back(rvtx_gen);
 if(leptonic)m_MC_lep->push_back(1);
 else m_MC_lep->push_back(0);
+*/
+        for (genpartIter = GenParticleHandle->begin(); genpartIter != GenParticleHandle->end(); ++genpartIter) {
+		if (abs(genpartIter ->pdgId())!=24)continue;
+		//std::cout<<"W-boson mother "<<genpartIter ->mother(0)->pdgId()<<std::endl;
+		if(abs(genpartIter ->mother(0)->pdgId())!=6 && abs(genpartIter ->mother(0)->pdgId())!=24 )continue;
+		if( abs(genpartIter ->daughter(0)->pdgId())==11  ||  abs(genpartIter ->daughter(0)->pdgId())==13 ||  abs(genpartIter ->daughter(0)->pdgId())==15){++leptonicCount;}
+	}
+m_MC_lep->push_back(leptonicCount);
+std::cout<<"Leptonic W count "<<leptonicCount<<std::endl;
   // ----------------------------------------------------------------------------------------------
   // loop over L1 stubs
   // ----------------------------------------------------------------------------------------------
@@ -1193,15 +1205,19 @@ else m_MC_lep->push_back(0);
   m_pv_L1reco->push_back(FillRecoPrimaryVtx());
   RecoJetInputs_.clear();
    for(unsigned int t=0; t<m_trk_z0->size(); ++t){
-    if(m_trk_pt->at(t)>2 && fabs(m_trk_z0->at(t)-m_pv_L1reco->at(0))<0.5 && m_trk_chi2->at(t)<5){
+    if(m_trk_pt->at(t)>2 && fabs(m_trk_z0->at(t)-m_pv_L1->at(0))<0.5 && m_trk_chi2->at(t)<5	&& m_trk_nstub->at(t)>4
+	){
+    //if(m_trk_pt->at(t)>2 && m_trk_chi2->at(t)<5){
       TLorentzVector temp;
-      temp.SetPtEtaPhiE(m_trk_pt->at(t), m_trk_eta->at(t), m_trk_phi->at(t), m_trk_p->at(t));
+      //if(m_trk_pt->at(t)<200)
+	temp.SetPtEtaPhiE(m_trk_pt->at(t), m_trk_eta->at(t), m_trk_phi->at(t), m_trk_p->at(t));
+      //else temp.SetPtEtaPhiE(200, m_trk_eta->at(t), m_trk_phi->at(t), cosh(m_trk_eta->at(t))*200);
       fastjet::PseudoJet psuedoJet(temp.Px(), temp.Py(), temp.Pz(), temp.P()); 
       RecoJetInputs_.push_back( psuedoJet);
-      RecoJetInputs_.back().set_user_index(m_trk_pt->size()-1);
+      RecoJetInputs_.back().set_user_index(t);
     }
 }
-std::cout<<"PV L1 "<<m_pv_L1->at(0)<<" Reco Tracks "<<m_pv_L1reco->at(0)<<std::endl;
+//std::cout<<" Total Tracks "<<m_trk_z0->size()<<"PV L1 "<<m_pv_L1->at(0)<<" Reco Tracks "<<m_pv_L1reco->at(0)<<std::endl;
 TrueJetInputs_.clear();
 
 if(GenJetsAK4Handle.isValid()){
@@ -1231,9 +1247,9 @@ if(GenJetsAK4Handle.isValid()){
         m_genak4jet_neufrac->push_back(NeuEnergy);
 	//if(m_MC_lep->at(0)<1  && ChgEnergy/genJet.energy()>0.98)std::cout<<"getGenConstituent Print "<<genJet.print()<<std::endl;
 	//std::cout<<"Charge Energy Fraction "<<ChgEnergy/genJet.energy()<<std::endl;
-	if(ChgEnergy/genJet.energy()>0.6 && genJet.pt()>30){
-		std::cout<<"Gen Jet "<<genJet.eta()<<", "<<genJet.phi()<<std::endl;
-	}
+//	if(ChgEnergy/genJet.energy()>0.6 && genJet.pt()>30){
+//		std::cout<<"Gen Jet "<<genJet.eta()<<", "<<genJet.phi()<<std::endl;
+//	}
     }
   }
 }
@@ -1363,38 +1379,9 @@ JetInputsPU20_.clear();
     //JetInputs_.back().set_user_index(tp_index);
     JetInputs_.back().set_user_index(this_tp);
     }
-   // if( fabs(iterTP->eta())<2.4 && fabs(tmp_tp_z0-m_pv_L1->at(0))>1.0  && nStubLayerTP>=4 && tp_ptr->pt() > TP_minPt){ //&& fabs(iterTP->vz())<TP_maxZ0 ){
-   // fastjet::PseudoJet psuedoJet(tp_ptr->px(), tp_ptr->py(), tp_ptr->pz(), tp_ptr->p()); 
-    //JetInputsPU_.push_back(psuedoJet);	
-    /*
-    if(tmp_tp_z0>0 && tmp_tp_z0<1.){JetInputsPU1_.push_back(psuedoJet);JetInputsPU1_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>1 && tmp_tp_z0<2.){JetInputsPU2_.push_back(psuedoJet);JetInputsPU2_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>2 && tmp_tp_z0<3.){JetInputsPU3_.push_back(psuedoJet);JetInputsPU3_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>3 && tmp_tp_z0<4.){JetInputsPU4_.push_back(psuedoJet);JetInputsPU4_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>4 && tmp_tp_z0<5.){JetInputsPU5_.push_back(psuedoJet);JetInputsPU5_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>5 && tmp_tp_z0<6.){JetInputsPU6_.push_back(psuedoJet);JetInputsPU6_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>6 && tmp_tp_z0<7.){JetInputsPU7_.push_back(psuedoJet);JetInputsPU7_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>7 && tmp_tp_z0<8.){JetInputsPU8_.push_back(psuedoJet);JetInputsPU8_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>8 && tmp_tp_z0<9.){JetInputsPU9_.push_back(psuedoJet);JetInputsPU9_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>9 && tmp_tp_z0<10.){JetInputsPU10_.push_back(psuedoJet);JetInputsPU10_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>-1 && tmp_tp_z0<0.){JetInputsPU11_.push_back(psuedoJet);JetInputsPU11_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>-2 && tmp_tp_z0<-1.){JetInputsPU12_.push_back(psuedoJet);JetInputsPU12_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>-3 && tmp_tp_z0<-2.){JetInputsPU13_.push_back(psuedoJet);JetInputsPU13_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>-4 && tmp_tp_z0<-3.){JetInputsPU14_.push_back(psuedoJet);JetInputsPU14_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>-5 && tmp_tp_z0<-4.){JetInputsPU15_.push_back(psuedoJet);JetInputsPU15_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>-6 && tmp_tp_z0<-5.){JetInputsPU16_.push_back(psuedoJet);JetInputsPU16_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>-7 && tmp_tp_z0<-6.){JetInputsPU17_.push_back(psuedoJet);JetInputsPU17_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>-8 && tmp_tp_z0<-7.){JetInputsPU18_.push_back(psuedoJet);JetInputsPU18_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>-9 && tmp_tp_z0<-8.){JetInputsPU19_.push_back(psuedoJet);JetInputsPU19_.back().set_user_index(this_tp);}	
-    if(tmp_tp_z0>-10 && tmp_tp_z0<-9.){JetInputsPU20_.push_back(psuedoJet);JetInputsPU20_.back().set_user_index(this_tp);}	
-    */
-    //JetInputs_.back().set_user_index(tp_index);
-    //JetInputsPU_.back().set_user_index(this_tp);
-
-    //}
     this_tp++;
 
-    if (MyProcess != 1 && tmp_eventid > 0) continue; //only care about tracking particles from the primary interaction (except for MyProcess==1, i.e. looking at all TPs)
+    //if (MyProcess != 1 && tmp_eventid > 0) continue; //only care about tracking particles from the primary interaction (except for MyProcess==1, i.e. looking at all TPs)
 
 
 
@@ -1594,15 +1581,6 @@ JetInputsPU20_.clear();
     m_matchtrk_d0 ->push_back(tmp_matchtrk_d0);
     m_matchtrk_chi2 ->push_back(tmp_matchtrk_chi2);
     m_matchtrk_nstub->push_back(tmp_matchtrk_nstub);
-   /* 
-    if(tmp_matchtrk_nstub>=4 && tmp_matchtrk_pt>2 && fabs(tmp_matchtrk_z0-m_pv_L1->at(0))<0.5){
-      TLorentzVector temp;
-      temp.SetPtEtaPhiE(tmp_matchtrk_pt, tmp_matchtrk_eta, tmp_matchtrk_phi, tmp_matchtrk_p);
-      fastjet::PseudoJet psuedoJet(temp.Px(), temp.Py(), temp.Pz(), temp.P()); 
-      RecoJetInputs_.push_back( psuedoJet);
-      RecoJetInputs_.back().set_user_index(m_matchtrk_pt->size()-1);
-    }
-*/
   } //end loop tracking particles
 
 //  FillJets(TrueJetInputs_, true, true, TrackingParticleHandle);
@@ -1642,37 +1620,8 @@ m_recojet_vz->push_back(avgZ);
   m_recojet_eta->push_back(JetOutputs_[ijet].eta());
   m_recojet_pt->push_back(JetOutputs_[ijet].pt());
   m_recojet_p->push_back(JetOutputs_[ijet].modp());
-if(JetOutputs_[ijet].pt()>10)std::cout<<"Fast Jet Eta Phi "<<JetOutputs_[ijet].eta()<<", "<<JetOutputs_[ijet].phi_std()<<std::endl;
+//if(JetOutputs_[ijet].pt()>10)std::cout<<"Fast Jet Eta Phi "<<JetOutputs_[ijet].eta()<<", "<<JetOutputs_[ijet].phi_std()<<std::endl;
 }
-/*
-  FillJets(JetInputsPU1_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU2_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU3_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU4_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU5_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU6_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU7_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU8_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU9_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU10_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU11_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU12_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU13_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU14_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU15_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU16_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU17_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU18_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU19_,false,false,TrackingParticleHandle);
-FillJets(JetInputsPU20_,false,false,TrackingParticleHandle);  
-*/
-//FillClusteringMaps();
-//FindEtaClusters();
-//FindClusters();
-//float maxHTZvtx=FindMaxHTSlice(); 
-//std::cout<<"HT Slice Z "<<maxHTZvtx<<" PV MC z "<<m_pv_MC->at(0)<<" Reco Pv z "<<m_pv_L1reco->at(0)<<std::endl;
-//m_pv_HTz->push_back(maxHTZvtx);
-//MergePromptCandidates();
 eventTree->Fill();
 
 } // end of analyze()
@@ -1789,13 +1738,15 @@ double vtxZ=0;
 htmp->Reset();
 htmp_weight->Reset();
 for(unsigned int z=0; z<m_trk_z0->size(); ++z){
-     if(m_trk_nstub->at(z)<5)continue;
+     //if(m_trk_nstub->at(z)<5)continue;
      if(m_trk_pt->at(z)<2)continue;
-     if(fabs(m_trk_z0->at(z))>25.)continue;
+     if(m_trk_pt->at(z)!=m_trk_pt->at(z))continue;
+     if(fabs(m_trk_z0->at(z))>15.)continue;
      if(m_trk_z0->at(z)!=m_trk_z0->at(z))continue;
-     if(m_trk_chi2->at(z)>5)continue;
-     if(m_trk_pt->at(z)>50)continue;
+     //if(m_trk_chi2->at(z)>5)continue;
+
      float pt=m_trk_pt->at(z);
+     if(m_trk_pt->at(z)>200)pt=200;
      htmp -> Fill( m_trk_z0->at(z) );
      htmp_weight -> Fill( m_trk_z0->at(z), pt );
 }
@@ -1883,9 +1834,9 @@ int this_tp = 0;
         if ( hasStubInLayer[isum] == 2) nStubLayerTP_g += 1;
    }
 
-    if(tp_ptr->pt()>50)continue;
-    if(tp_ptr->pt()<2)continue;
-     if(fabs(tp_ptr->vz())>25.)continue;
+   if(tp_ptr->pt()>200)continue;
+   if(tp_ptr->pt()<2)continue;
+   if(fabs(tp_ptr->vz())>25.)continue;
    if(nStubLayerTP<4)continue;
     float  tmp_tp_vx=tp_ptr->vx();
     float  tmp_tp_vy=tp_ptr->vy();
